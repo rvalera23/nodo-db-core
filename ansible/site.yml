@@ -14,7 +14,7 @@
         state: present
         update_cache: yes
 
-    - name: FASE 3 - Creacion de carpetas de datos
+    - name: FASE 3 - Creacion de carpetas de datos con permisos base
       file:
         path: "/opt/servicios/nodo-db-core/{{ item }}"
         state: directory
@@ -23,8 +23,15 @@
         group: "1000"
       with_items:
         - db_data
-        - postgres_data
         - mongo_data
+
+    - name: FASE 3.1 - Permisos especificos para Postgres (ID 70)
+      file:
+        path: "/opt/servicios/nodo-db-core/postgres_data"
+        state: directory
+        owner: "70"
+        group: "70"
+        mode: '0700'
 
     - name: FASE 4.2 - Pull de imagenes
       shell: "docker pull {{ item }}"
