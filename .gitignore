@@ -1,0 +1,4 @@
+.env
+db_data/
+mongo_data/
+postgres_data/
