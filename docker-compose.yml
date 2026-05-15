@@ -22,7 +22,7 @@ services:
       POSTGRES_USER: nodo_admin
       POSTGRES_DB: nodo_db
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql
 
   db_mongo:
     image: mongo:latest
