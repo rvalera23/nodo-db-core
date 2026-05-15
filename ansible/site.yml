@@ -1,8 +1,23 @@
-- name: FASE 5.1 - Esperar a que Postgres esté listo
+---
+- name: Despliegue Completo Nodo DB Core
+  hosts: db_servers
+  become: yes
+  tasks:
+    - name: FASE 3 - Preparar directorios de datos
+      file:
+        path: "/opt/servicios/{{ item }}"
+        state: directory
+        mode: '0755'
+      with_items: [db_data, postgres_data, mongo_data]
+
+    - name: FASE 5 - Levantar Contenedores
+      shell: "cd /opt/servicios/nodo-db-core && docker compose up -d"
+
+    - name: FASE 5.1 - Esperar a que Postgres esté listo
       pause:
         seconds: 20
 
     - name: FASE 5.2 - Crear base de datos para Zabbix en Postgres
       shell: |
         docker exec db_postgres psql -U nodo_admin -d nodo_db -c "CREATE DATABASE zabbix_db;"
-      ignore_errors: yes # Por si ya existe
+      ignore_errors: yes
