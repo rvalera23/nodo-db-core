@@ -1,16 +1,14 @@
 version: '3.8'
-
 services:
   db_infra:
     image: mariadb:11.4
     container_name: db_infra
     restart: unless-stopped
-    ports:
-      - "3306:3306"
+    ports: ["3306:3306"]
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
-      - ../db_data:/var/lib/mysql
+      - ./db_data:/var/lib/mysql
       - ./configs/init.sql:/docker-entrypoint-initdb.d/init.sql
     command: --bind-address=0.0.0.0
 
@@ -18,29 +16,21 @@ services:
     image: postgres:18-alpine
     container_name: db_postgres
     restart: unless-stopped
-    ports:
-      - "5432:5432"
+    ports: ["5432:5432"]
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      # Nota: Postgres crea una sola DB por defecto. 
-      # Para Odoo y Zabbix, crearemos las adicionales vía Ansible o comandos de inicio.
       POSTGRES_USER: nodo_admin
       POSTGRES_DB: nodo_db
     volumes:
-      - ../postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data
 
   db_mongo:
     image: mongo:latest
     container_name: db_mongo
     restart: unless-stopped
-    ports:
-      - "27017:27017"
+    ports: ["27017:27017"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     volumes:
-      - ../mongo_data:/data/db
-
-networks:
-  default:
-    name: red_infra_db
+      - ./mongo_data:/data/db
