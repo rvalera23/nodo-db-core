@@ -1,0 +1,8 @@
+- name: FASE 5.1 - Esperar a que Postgres esté listo
+      pause:
+        seconds: 20
+
+    - name: FASE 5.2 - Crear base de datos para Zabbix en Postgres
+      shell: |
+        docker exec db_postgres psql -U nodo_admin -d nodo_db -c "CREATE DATABASE zabbix_db;"
+      ignore_errors: yes # Por si ya existe
