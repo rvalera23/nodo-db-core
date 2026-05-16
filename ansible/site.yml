@@ -14,7 +14,7 @@
         state: present
         update_cache: yes
 
-    - name: FASE 3 - Creacion de carpetas de datos con permisos base
+    - name: FASE 2 - Creacion de carpetas de datos con permisos base
       file:
         path: "/opt/servicios/nodo-db-core/{{ item }}"
         state: directory
@@ -24,8 +24,9 @@
       with_items:
         - db_data
         - mongo_data
+        - configs/postgres
 
-    - name: FASE 3.1 - Permisos especificos para Postgres (ID 70)
+    - name: FASE 3 - Permisos especificos para Postgres (ID 70)
       file:
         path: "/opt/servicios/nodo-db-core/postgres_data"
         state: directory
@@ -33,21 +34,19 @@
         group: "70"
         mode: '0700'
 
-    - name: FASE 4.2 - Pull de imagenes
+    - name: FASE 4 - Sincronizar Inicialización de Zabbix (¡Automatizado Manual!)
+      # Esto copia el script que crea la DB de Zabbix antes de que encienda el motor
+      copy:
+        src: "../configs/postgres/init_zabbix.sql"
+        dest: "/opt/servicios/nodo-db-core/configs/postgres/init_zabbix.sql"
+        mode: '0644'
+
+    - name: FASE 5 - Pull de imagenes
       shell: "docker pull {{ item }}"
       with_items:
         - "mariadb:11.4"
         - "postgres:18-alpine"
         - "mongo:latest"
 
-    - name: FASE 5 - Levantar los contenedores
+    - name: FASE 6 - Levantar los contenedores
       shell: "cd /opt/servicios/nodo-db-core && docker compose up -d"
-
-    - name: FASE 5.1 - Esperar a que Postgres este listo
-      pause:
-        seconds: 20
-
-    - name: FASE 5.2 - Crear base de datos para Zabbix en Postgres
-      shell: |
-        docker exec db_postgres psql -U nodo_admin -d nodo_db -c "CREATE DATABASE zabbix_db;"
-      ignore_errors: yes
