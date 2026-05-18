@@ -25,15 +25,21 @@
         - db_data
         - mongo_data
         - configs/postgres
-        # --- ESTRUCTURA AUTOMÁTICA DE BACKUPS MAESTROS ---
-        - backups
-        - backups/mariadb
-        - backups/mariadb/wordpress
-        - backups/mariadb/glpi
-        - backups/mariadb/n8n
-        - backups/postgres
-        - backups/postgres/zabbix
-        - backups/mongo
+
+    - name: FASE 2.1 - Forzar árbol jerárquico de backups maestros (A prueba de fallas)
+      file:
+        path: "/opt/servicios/nodo-db-core/backups/{{ item }}"
+        state: directory
+        mode: '0755'
+        owner: "1000"
+        group: "1000"
+        recurse: yes
+      with_items:
+        - mariadb/wordpress
+        - mariadb/glpi
+        - mariadb/n8n
+        - postgres/zabbix
+        - mongo
 
     - name: FASE 3 - Permisos especificos para Postgres (ID 70)
       file:
