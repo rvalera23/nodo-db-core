@@ -1,7 +1,6 @@
 -- Bases de datos para aplicaciones externas
 CREATE DATABASE IF NOT EXISTS wordpress_db;
 CREATE DATABASE IF NOT EXISTS glpi_db;
-CREATE DATABASE IF NOT EXISTS n8n_db;
 
 -- Usuario del ecosistema NODO (Acceso remoto total)
 CREATE USER IF NOT EXISTS 'nodo_user'@'%' IDENTIFIED BY 'admin123*';

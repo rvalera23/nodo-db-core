@@ -37,7 +37,7 @@
       with_items:
         - mariadb/wordpress
         - mariadb/glpi
-        - mariadb/n8n
+        - postgres/n8n
         - postgres/zabbix
         - mongo
 
@@ -52,8 +52,8 @@
     - name: FASE 4 - Sincronizar Inicialización de Zabbix (¡Automatizado Manual!)
       # Esto copia el script que crea la DB de Zabbix antes de que encienda el motor
       copy:
-        src: "../configs/postgres/init_zabbix.sql"
-        dest: "/opt/servicios/nodo-db-core/configs/postgres/init_zabbix.sql"
+        src: "../configs/postgres/"
+        dest: "/opt/servicios/nodo-db-core/configs/postgres/"
         mode: '0644'
 
     - name: FASE 5 - Pull de imagenes
