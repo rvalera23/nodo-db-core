@@ -1,15 +1,15 @@
 version: '3.8'
 services:
-  db_infra:
+  db_mariadb:
     image: mariadb:11.4
-    container_name: db_infra
+    container_name: db_mariadb
     restart: unless-stopped
     ports: ["3306:3306"]
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
-      - ./db_data:/var/lib/mysql
-      - ./configs/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./mariadb_data:/var/lib/mysql
+      - ./configs/mariadb/init_mariadb.sql:/docker-entrypoint-initdb.d/init.sql
     command: --bind-address=0.0.0.0
 
   db_postgres:
