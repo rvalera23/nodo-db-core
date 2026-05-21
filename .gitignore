@@ -1,6 +1,5 @@
 .env
-*_data/
-db_data/
+mariadb_data/
 mongo_data/
 postgres_data/
-backups/
+*.log
