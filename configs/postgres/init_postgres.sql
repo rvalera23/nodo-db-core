@@ -4,7 +4,7 @@ CREATE DATABASE zabbix;
 CREATE DATABASE n8n_db;
 
 -- Usuario del ecosistema NODO
-CREATE USER nodo_user WITH PASSWORD 'nodo123456**';
+CREATE USER nodo_user WITH PASSWORD 'nodo_2026*';
 GRANT ALL PRIVILEGES ON DATABASE zabbix TO nodo_user;
 GRANT ALL PRIVILEGES ON DATABASE n8n_db TO nodo_user;
 
