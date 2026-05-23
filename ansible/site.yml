@@ -26,7 +26,7 @@
         - mongo_data
         - configs/postgres
 
-    - name: FASE 2.1 - Forzar árbol jerárquico de backups maestros (A prueba de fallas)
+    - name: FASE 2.1 - Estructura jerárquica de backups
       file:
         path: "/opt/servicios/nodo-db-core/backups/{{ item }}"
         state: directory
@@ -41,7 +41,7 @@
         - postgres/zabbix
         - mongo
 
-    - name: FASE 3 - Permisos especificos para Postgres (ID 70)
+    - name: FASE 3 - Permisos especificos para Postgres
       file:
         path: "/opt/servicios/nodo-db-core/postgres_data"
         state: directory
@@ -49,7 +49,7 @@
         group: "70"
         mode: '0700'
 
-    - name: FASE 4 - Sincronizar Inicialización de Zabbix (¡Automatizado Manual!)
+    - name: FASE 4 - Sincronizar Inicialización
       # Esto copia el script que crea la DB de Zabbix antes de que encienda el motor
       copy:
         src: "../configs/postgres/"
