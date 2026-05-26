@@ -1,0 +1,46 @@
+---
+# ==============================================================================
+# PLANTILLA DE CONFIGURACIÓN (all.yml.example)
+# Copia este archivo como 'all.yml' y ajusta los valores según tu entorno.
+# NO SUBAS EL ARCHIVO 'all.yml' AL REPOSITORIO PÚBLICO.
+# ==============================================================================
+
+# --- Credenciales para las Aplicaciones ---
+db_app_user: "usuario_aplicacion"
+db_app_password: "password_segura_aqui"
+
+# --- Listas de Bases de Datos ---
+mariadb_databases:
+  - name: "wordpress_db"
+  - name: "glpi_db"
+
+postgres_databases:
+  - name: "zabbix_db"
+  - name: "n8n_db"
+
+mongo_databases:
+  - name: "logs_db"
+
+# --- Credenciales de Administración ---
+mariadb_root_password: "root_password_mariadb"
+
+postgres_user: "postgres_admin"
+postgres_password: "postgres_password"
+postgres_db: "postgres_db"
+
+mongo_root_username: "admin"
+mongo_root_password: "mongo_password"
+
+# --- Configuración Específica ---
+authentik_secret_key: "generar_con_openssl_rand_base64_32"
+base_path: "/opt/servicios/nodo-db-core"
+
+# --- Redes Permitidas (Firewall) ---
+allowed_db_networks:
+  - "100.64.0.0/10"
+  - "192.168.1.0/24"
+
+# --- Configuración de Backups ---
+backup_retention_days: 7
+backup_cron_hour: "4"
+backup_cron_minute: "00"
