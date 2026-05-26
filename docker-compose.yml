@@ -11,7 +11,6 @@ services:
     volumes:
       - ./mariadb_data:/var/lib/mysql
       - ./configs/mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: ["--init-file=/docker-entrypoint-initdb.d/init.sql", "--bind-address=0.0.0.0"]
 
   db_postgres:
     image: postgres:18-alpine
@@ -42,8 +41,7 @@ services:
       - nodo_net
     volumes:
       - ./mongo_data:/data/db
-      - ./configs/mongo/init.js:/docker-entrypoint-initdb.d/init.js
-
+      - ./configs/mongo/init.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
   auth_redis:
     image: redis:alpine
     container_name: auth_redis

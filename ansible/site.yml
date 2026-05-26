@@ -117,7 +117,7 @@
       with_items:
         - { src: "init_mariadb.sql.j2", dest: "configs/mariadb/init.sql" }
         - { src: "init_postgres.sql.j2", dest: "configs/postgres/init.sql" }
-        - { src: "init_mongo.sql.j2", dest: "configs/mongo/init.js" }
+        - { src: "init_mongo.js.j2", dest: "configs/mongo/init.js" }
         - { src: ".env.js", dest: ".env" }
 
     - name: FASE 5 - Pull de imagenes

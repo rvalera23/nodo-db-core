@@ -6,8 +6,13 @@ RETENTION_DAYS={{ backup_retention_days | default(7) }}
 
 # --- 1. BACKUP MARIADB ---
 {% for db in mariadb_databases %}
-# Si tienes subcarpetas (ej: wordpress, glpi), podrías definirlo aquí
-docker exec db_mariadb mariadb-dump -u root -p'{{ mariadb_root_password }}' {{ db.name }} > $BACKUP_PATH/mariadb/{{ db.name }}_$(date +%Y%m%d_%H%M).sql
+docker exec db_mariadb mariadb-dump \
+  -h 127.0.0.1 \
+  -u root \
+  -p'{{ mariadb_root_password }}' \
+  --single-transaction \
+  --quick \
+  {{ db.name }} > $BACKUP_PATH/mariadb/{{ db.name }}_$(date +%Y%m%d_%H%M).sql
 {% endfor %}
 
 # --- 2. BACKUP POSTGRES ---
@@ -17,7 +22,13 @@ docker exec db_postgres pg_dump -U {{ postgres_user }} {{ db.name }} > $BACKUP_P
 
 # --- 3. BACKUP MONGO ---
 {% for db in mongo_databases %}
-docker exec db_mongo mongodump --username {{ mongo_root_username }} --password {{ mongo_root_password }} --db {{ db.name }} --out $BACKUP_PATH/mongo/{{ db.name }}_$(date +%Y%m%d_%H%M)
+echo "Ejecutando backup de {{ db.name }}..."
+docker exec db_mongo mongodump \
+  --username {{ mongo_root_username }} \
+  --password {{ mongo_root_password }} \
+  --authenticationDatabase admin \
+  --db {{ db.name }} \
+  --archive > $BACKUP_PATH/mongo/{{ db.name }}_$(date +%Y%m%d_%H%M).archive
 {% endfor %}
 
 # --- 4. LIMPIEZA LOCAL ---
