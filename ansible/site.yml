@@ -1,8 +1,24 @@
 ---
-- name: Instalación y Configuración Automática de Nodo DB Core
+- name: Instalación y Configuración de Nucleo de Bases de Datos
   hosts: all
   become: yes
   tasks:
+    - name: FASE 0 - Instalacion profesional de Tailscale
+      block:
+        - name: Instalar llaves y repositorio oficial de forma dinámica
+          shell: |
+            mkdir -p /usr/share/keyrings
+            curl -fsSL https://pkgs.tailscale.com/stable/debian/{{ ansible_distribution_release }}.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+            curl -fsSL https://pkgs.tailscale.com/stable/debian/{{ ansible_distribution_release }}.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list
+          args:
+            creates: /etc/apt/sources.list.d/tailscale.list
+
+        - name: Actualizar cache e instalar la version mas reciente
+          apt:
+            name: tailscale
+            state: latest
+            update_cache: yes
+
     - name: FASE 1 - Instalacion de Docker y dependencias
       apt:
         name:
@@ -11,8 +27,38 @@
           - python3-pip
           - curl
           - git
+          - net-tools
+          - ufw
         state: present
         update_cache: yes
+
+
+    - name: FASE 1.1 - Configuración de Firewall (UFW)
+      block:
+        - name: FASE 0.0 - Asegurar acceso SSH
+          ufw:
+            rule: allow
+            port: '22'
+            proto: tcp
+
+        - name: FASE 0.1 - Bloquear acceso público a puertos sensibles
+          ufw:
+            rule: deny
+            port: "{{ item }}"
+            proto: tcp
+          with_items: ["3306", "5432", "27017", "6379"]
+
+        - name: FASE 0.2 - Permitir acceso solo desde la red Tailscale
+          ufw:
+            rule: allow
+            src: 100.64.0.0/10
+            proto: tcp
+            to_port: "{{ item }}"
+          with_items: ["3306", "5432", "27017", "6379"]
+
+        - name: Habilitar UFW
+          ufw:
+            state: enabled
 
     - name: FASE 2 - Creacion de carpetas de datos con permisos base
       file:
@@ -22,9 +68,12 @@
         owner: "1000"
         group: "1000"
       with_items:
-        - db_data
+        - mariadb_data
+        - postgres_data
         - mongo_data
         - configs/postgres
+        - configs/mariadb
+        - configs/mongo
 
     - name: FASE 2.1 - Estructura jerárquica de backups
       file:
@@ -49,12 +98,16 @@
         group: "70"
         mode: '0700'
 
-    - name: FASE 4 - Sincronizar Inicialización
-      # Esto copia el script que crea la DB de Zabbix antes de que encienda el motor
-      copy:
-        src: "../configs/postgres/"
-        dest: "/opt/servicios/nodo-db-core/configs/postgres/"
+    - name: FASE 4 - Generar configuraciones dinámicas (Jinja2)
+      template:
+        src: "templates/{{ item.src }}"
+        dest: "/opt/servicios/nodo-db-core/{{ item.dest }}"
         mode: '0644'
+      with_items:
+        - { src: "init_mariadb.sql.j2", dest: "configs/mariadb/init.sql" }
+        - { src: "init_postgres.sql.j2", dest: "configs/postgres/init.sql" }
+        - { src: "init_mongo.sql.j2", dest: "configs/mongo/init.js" }
+        - { src: ".env.js", dest: ".env" }
 
     - name: FASE 5 - Pull de imagenes
       shell: "docker pull {{ item }}"
@@ -62,6 +115,7 @@
         - "mariadb:11.4"
         - "postgres:18-alpine"
         - "mongo:latest"
+        - "redis:alpine"
 
     - name: FASE 6 - Levantar los contenedores
       shell: "cd /opt/servicios/nodo-db-core && docker compose up -d"

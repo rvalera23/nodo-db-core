@@ -1,0 +1,34 @@
+---
+# ==============================================================================
+# PLANTILLA DE CONFIGURACIÓN (all.yml.example)
+# Copia este archivo como 'all.yml' y ajusta los valores según tu entorno.
+# ==============================================================================
+
+# Credenciales de Aplicación (Usuario que usan las apps para conectar a la DB)
+db_app_user: "tu_usuario_de_aplicacion"
+db_app_password: "una_contraseña_muy_segura_para_la_app"
+
+# Bases de datos MariaDB (Lista de esquemas necesarios)
+mariadb_databases:
+  - name: "wordpress_db"
+  - name: "glpi_db"
+
+# Bases de datos PostgreSQL (Lista de esquemas necesarios)
+postgres_databases:
+  - name: "zabbix"
+  - name: "n8n_db"
+  - name: "authentik_db"
+
+# Variables de entorno para Docker Compose
+# NOTA: Asegúrate de que estos valores coincidan con los del archivo .env
+mariadb_root_password: "cambia_esta_pass_root_mariadb"
+
+postgres_password: "cambia_esta_pass_root_postgres"
+postgres_user: "admin_postgres_interno"
+postgres_db: "db_principal_postgres"
+
+mongo_root_username: "admin_mongo"
+mongo_root_password: "cambia_esta_pass_root_mongo"
+
+# Ruta base en el servidor destino
+base_path: "/opt/servicios/nodo-db-core"
