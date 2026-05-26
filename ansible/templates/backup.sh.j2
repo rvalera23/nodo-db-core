@@ -1,0 +1,26 @@
+#!/bin/bash
+# NODO: Backup Local Jerárquico
+# Ejecuta todos los dumps y los organiza en las carpetas correspondientes
+BACKUP_PATH="{{ base_path }}/backups"
+RETENTION_DAYS={{ backup_retention_days | default(7) }}
+
+# --- 1. BACKUP MARIADB ---
+{% for db in mariadb_databases %}
+# Si tienes subcarpetas (ej: wordpress, glpi), podrías definirlo aquí
+docker exec db_mariadb mariadb-dump -u root -p'{{ mariadb_root_password }}' {{ db.name }} > $BACKUP_PATH/mariadb/{{ db.name }}_$(date +%Y%m%d_%H%M).sql
+{% endfor %}
+
+# --- 2. BACKUP POSTGRES ---
+{% for db in postgres_databases %}
+docker exec db_postgres pg_dump -U {{ postgres_user }} {{ db.name }} > $BACKUP_PATH/postgres/{{ db.name }}_$(date +%Y%m%d_%H%M).sql
+{% endfor %}
+
+# --- 3. BACKUP MONGO ---
+{% for db in mongo_databases %}
+docker exec db_mongo mongodump --username {{ mongo_root_username }} --password {{ mongo_root_password }} --db {{ db.name }} --out $BACKUP_PATH/mongo/{{ db.name }}_$(date +%Y%m%d_%H%M)
+{% endfor %}
+
+# --- 4. LIMPIEZA LOCAL ---
+# Borra archivos o carpetas (dumps) más viejos que el límite establecido
+find $BACKUP_PATH -type f -mtime +$RETENTION_DAYS -delete
+find $BACKUP_PATH -type d -mtime +$RETENTION_DAYS -exec rm -rf {} +

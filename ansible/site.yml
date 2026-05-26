@@ -128,5 +128,43 @@
         - "mongo:latest"
         - "redis:alpine"
 
-    - name: FASE 6 - Levantar los contenedores
-      shell: "cd /opt/servicios/nodo-db-core && docker compose up -d"
+    - name: FASE 6 - Preparar entorno limpio si no hay datos
+      shell: |
+        if [ ! -f /opt/servicios/nodo-db-core/mariadb_data/ib_buffer_pool ]; then
+          rm -rf /opt/servicios/nodo-db-core/mariadb_data/*
+        fi
+
+    - name: FASE 7 - Estado de logs Mariadb
+      shell: |
+        {% raw %}
+        ESTADO=$(docker inspect -f '{{.State.Status}}' db_mariadb 2>/dev/null || echo "not_running")
+        {% endraw %}
+        if [ "$ESTADO" = "restarting" ] && [ -f /opt/servicios/nodo-db-core/mariadb_data/tc.log ]; then
+            rm -f /opt/servicios/nodo-db-core/mariadb_data/tc.log
+            rm -f /opt/servicios/nodo-db-core/mariadb_data/ib_logfile*
+        fi
+      ignore_errors: yes
+
+    - name: FASE 8 - Levantar los contenedores
+      shell: |
+        cd /opt/servicios/nodo-db-core
+        docker compose down
+        docker compose up -d --force-recreate
+
+    - name: FASE 9 - Automatización total de backups
+      block:
+        - name: Desplegar script de backup desde plantilla
+          template:
+            src: templates/backup.sh.j2
+            dest: /usr/local/bin/nodo-backup.sh
+            mode: '0755'
+            owner: root
+            group: root
+
+        - name: Asegurar tarea programada en Cron
+          cron:
+            name: "Nodo Daily Backup"
+            minute: "{{ backup_cron_minute }}"
+            hour: "{{ backup_cron_hour }}"
+            job: "/usr/local/bin/nodo-backup.sh"
+            state: present

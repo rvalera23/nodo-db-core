@@ -1,21 +1,32 @@
 # --- Archivos sensibles y credenciales ---
 .env
 ansible/group_vars/all.yml
+# Añade esto para proteger si creas copias de seguridad de tus llaves o vault
+*.key
+*.vault
+*.private
 
-# --- Datos de las bases de datos (persistentes pero no versionables) ---
+# --- Datos de las bases de datos ---
 mariadb_data/
 postgres_data/
 mongo_data/
 
-# --- Backups (generalmente muy pesados) ---
+# --- Backups ---
 backups/
 
-# --- Logs y archivos temporales del sistema ---
+# --- Logs y archivos temporales ---
 *.log
 *.tmp
 .DS_Store
 .ansible-cache/
+__pycache__/
 
 # --- Docker ---
-# A veces Docker genera archivos de estado
 *.pid
+# Añade esto por si alguna vez usas archivos de override de docker-compose
+docker-compose.override.yml
+
+# --- Ansible / Configuraciones locales ---
+# Es bueno ignorar cualquier archivo de inventario local o de pruebas que no quieras subir
+hosts
+ansible.log

@@ -11,7 +11,7 @@ services:
     volumes:
       - ./mariadb_data:/var/lib/mysql
       - ./configs/mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
-    command: --bind-address=0.0.0.0
+    command: ["--init-file=/docker-entrypoint-initdb.d/init.sql", "--bind-address=0.0.0.0"]
 
   db_postgres:
     image: postgres:18-alpine

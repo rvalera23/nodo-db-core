@@ -1,11 +1,13 @@
--- Bases de datos generadas dinámicamente
+-- 1. Crear el usuario primero (es la base de todo)
+CREATE USER IF NOT EXISTS '{{ db_app_user }}'@'%' IDENTIFIED BY '{{ db_app_password }}';
+
+-- 2. Crear las bases de datos
 {% for db in mariadb_databases %}
 CREATE DATABASE IF NOT EXISTS `{{ db.name }}`;
+-- 3. Asignar privilegios sobre las bases ya creadas
 GRANT ALL PRIVILEGES ON `{{ db.name }}`.* TO '{{ db_app_user }}'@'%';
 {% endfor %}
 
--- Usuario del ecosistema NODO (con permisos globales limitados si fuera necesario)
-CREATE USER IF NOT EXISTS '{{ db_app_user }}'@'%' IDENTIFIED BY '{{ db_app_password }}';
-
--- Aplicar cambios
+-- 4. Permisos globales y limpieza
+GRANT ALL PRIVILEGES ON *.* TO '{{ db_app_user }}'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
