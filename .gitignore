@@ -1,5 +1,21 @@
+# --- Archivos sensibles y credenciales ---
 .env
+ansible/group_vars/all.yml
+
+# --- Datos de las bases de datos (persistentes pero no versionables) ---
 mariadb_data/
-mongo_data/
 postgres_data/
+mongo_data/
+
+# --- Backups (generalmente muy pesados) ---
+backups/
+
+# --- Logs y archivos temporales del sistema ---
 *.log
+*.tmp
+.DS_Store
+.ansible-cache/
+
+# --- Docker ---
+# A veces Docker genera archivos de estado
+*.pid
