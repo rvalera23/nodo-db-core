@@ -32,3 +32,10 @@ mongo_root_password: "cambia_esta_pass_root_mongo"
 
 # Ruta base en el servidor destino
 base_path: "/opt/servicios/nodo-db-core"
+
+# Lista de redes confiables que pueden acceder a las bases de datos
+allowed_db_networks:
+  - "100.64.0.0/10"      # Tailscale
+  - "192.168.1.0/24"     # Tu red local LAN
+  # Puedes añadir más aquí en el futuro:
+  # - "10.0.0.0/24"

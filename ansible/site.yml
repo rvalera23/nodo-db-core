@@ -48,13 +48,15 @@
             proto: tcp
           with_items: ["3306", "5432", "27017", "6379"]
 
-        - name: FASE 0.2 - Permitir acceso solo desde la red Tailscale
+        - name: FASE 0.2 - Permitir acceso solo desde redes autorizadas
           ufw:
             rule: allow
-            src: 100.64.0.0/10
+            src: "{{ item.0 }}"
             proto: tcp
-            to_port: "{{ item }}"
-          with_items: ["3306", "5432", "27017", "6379"]
+            to_port: "{{ item.1 }}"
+          with_nested:
+            - "{{ allowed_db_networks }}"
+            - ["3306", "5432", "27017", "6379"]
 
         - name: Habilitar UFW
           ufw:
