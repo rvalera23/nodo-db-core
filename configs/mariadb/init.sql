@@ -7,7 +7,7 @@ GRANT ALL PRIVILEGES ON glpi_db.* TO 'nodo_user'@'%';
 
 -- Usuario del ecosistema NODO
 
-CREATE USER IF NOT EXISTS 'nodo_user'@'%' IDENTIFIED BY 'admin123*';
+CREATE USER IF NOT EXISTS 'nodo_user'@'%' IDENTIFIED BY 'nodo123*';
 
 -- Aplicar cambios
 

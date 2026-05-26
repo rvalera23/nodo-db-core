@@ -1,14 +1,11 @@
 -- Bases de datos generadas dinámicamente
-
 {% for db in mariadb_databases %}
-CREATE DATABASE IF NOT EXISTS {{ db.name }};
-GRANT ALL PRIVILEGES ON {{ db.name }}.* TO '{{ db_app_user }}'@'%';
+CREATE DATABASE IF NOT EXISTS `{{ db.name }}`;
+GRANT ALL PRIVILEGES ON `{{ db.name }}`.* TO '{{ db_app_user }}'@'%';
 {% endfor %}
 
--- Usuario del ecosistema NODO
-
+-- Usuario del ecosistema NODO (con permisos globales limitados si fuera necesario)
 CREATE USER IF NOT EXISTS '{{ db_app_user }}'@'%' IDENTIFIED BY '{{ db_app_password }}';
 
 -- Aplicar cambios
-
 FLUSH PRIVILEGES;

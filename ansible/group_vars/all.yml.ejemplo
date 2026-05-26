@@ -30,6 +30,11 @@ postgres_db: "db_principal_postgres"
 mongo_root_username: "admin_mongo"
 mongo_root_password: "cambia_esta_pass_root_mongo"
 
+# authentik_secret_key: Genera una clave segura usando:
+# openssl rand -base64 32
+
+authentik_secret_key: "TU_CLAVE_SEGURA_DE_AUTHENTIK"
+
 # Ruta base en el servidor destino
 base_path: "/opt/servicios/nodo-db-core"
 

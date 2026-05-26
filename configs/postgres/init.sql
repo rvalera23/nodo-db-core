@@ -1,5 +1,5 @@
 -- Usuario central del ecosistema NODO
-CREATE USER nodo_user WITH PASSWORD 'admin123*';
+CREATE USER nodo_user WITH PASSWORD 'nodo123*';
 
 -- Configuración para la base de datos: zabbix
 CREATE DATABASE zabbix;
