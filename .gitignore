@@ -30,3 +30,33 @@ docker-compose.override.yml
 # Es bueno ignorar cualquier archivo de inventario local o de pruebas que no quieras subir
 hosts
 ansible.log
+
+
+# --- Tus Scripts generados ---
+# No queremos subir los scripts que Ansible genera en /tmp o localmente
+/tmp/*.sh
+
+# --- Archivos de despliegue locales ---
+# Si alguna vez usas archivos de variables específicos para tu máquina local
+group_vars/local.yml
+
+# --- Archivos de respaldo de base de datos ---
+# Asegúrate de que las rutas relativas funcionen
+backups/
+/backups/
+
+
+# --- Archivos generados dinámicamente por Ansible (Resultados) ---
+# Si Ansible genera los archivos en los directorios de configs o en la raíz, ignóralos:
+configs/mariadb/init.sql
+configs/postgres/init.sql
+configs/mongo/init.js
+docker-compose.yml
+
+# --- Archivos de estado de Docker ---
+# A veces Docker crea archivos de red o estados, mejor ignorarlos
+.docker/
+
+# --- Scripts generados por Ansible (Contienen secretos inyectados) ---
+/usr/local/bin/backups.sh
+/tmp/restore_db.sh
