@@ -1,0 +1,56 @@
+---
+- name: Restauración Interactiva con Selección Quirúrgica
+  hosts: all
+  become: yes
+  vars_files:
+    - group_vars/all.yml
+  tasks:
+    - name: 1. Elegir Motor
+      pause:
+        prompt: "Selecciona motor: 1) MariaDB, 2) Postgres, 3) Mongo"
+      register: db_type_in
+
+    - name: 2. Definir tipo y lista de DBs
+      set_fact:
+        type: "{{ 'mariadb' if db_type_in.user_input == '1' else ('postgres' if db_type_in.user_input == '2' else 'mongo') }}"
+        db_list: "{{ mariadb_databases if db_type_in.user_input == '1' else (postgres_databases if db_type_in.user_input == '2' else mongo_databases) }}"
+
+    - name: 3. Elegir Base de Datos exacta
+      pause:
+        prompt: "Elige la DB a restaurar: {{ db_list | map(attribute='name') | list }}"
+      register: db_choice
+
+    - name: 4. Listar backups específicos de la DB elegida
+      find:
+        paths: "{{ base_path }}/backups/{{ type }}"
+        patterns: "{{ db_choice.user_input }}*.sql,{{ db_choice.user_input }}*.archive"
+        file_type: file
+      register: found_backups
+
+    - name: 5. Validar si hay archivos
+      fail: msg="No se encontraron respaldos para {{ db_choice.user_input }}"
+      when: found_backups.files | length == 0
+
+    - name: 6. Mostrar lista y elegir
+      pause:
+        prompt: |
+          {% set sorted_list = found_backups.files | sort(attribute='mtime', reverse=true) %}
+          SELECCIONA EL RESPALDO (El primero es el más reciente):
+          {% for f in sorted_list %}
+          {{ loop.index }}) {{ f.path | basename }}
+          {% endfor %}
+          Escribe el número del respaldo que deseas usar:
+      register: selection
+
+    - name: 7. Definir archivo seleccionado
+      set_fact:
+        selected_file: "{{ (found_backups.files | sort(attribute='mtime', reverse=true))[selection.user_input | int - 1].path | basename }}"
+
+    - name: 8. Generar script de restauración en el servidor
+      template:
+        src: templates/restore.sh.j2
+        dest: /tmp/restore_db.sh
+        mode: '0755'
+
+    - name: 9. Ejecutar restauración
+      shell: /tmp/restore_db.sh "{{ type }}" "{{ selected_file }}" {{ '-v' if ansible_verbosity > 0 else '' }}

@@ -32,13 +32,18 @@ mongo_root_username: "admin"
 mongo_root_password: "mongo_password"
 
 # --- Configuración Específica ---
-authentik_secret_key: "generar_con_openssl_rand_base64_32"
+authentik_secret_key: "generar_con_ openssl rand -base64 32"
 base_path: "/opt/servicios/nodo-db-core"
+
+# --- Configuración de Red ---
+docker_network: "nodo_net"
 
 # --- Redes Permitidas (Firewall) ---
 allowed_db_networks:
   - "100.64.0.0/10"
   - "192.168.1.0/24"
+  - "172.16.0.0/16"
+  - "10.0.0.0/8"
 
 # --- Configuración de Backups ---
 backup_retention_days: 7

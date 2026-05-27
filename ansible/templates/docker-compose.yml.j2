@@ -1,0 +1,60 @@
+services:
+  db_mariadb:
+    image: mariadb:11.4
+    command: ["mysqld", "--bind-address=0.0.0.0", "--innodb-use-native-aio=0"]
+    restart: unless-stopped
+    ports:
+      - "{{ port_mariadb }}"
+    environment:
+      MYSQL_ROOT_PASSWORD: "{{ mariadb_root_password }}"
+    networks:
+      - nodo_net
+    volumes:
+      - {{ base_path }}/mariadb_data:/var/lib/mysql
+      - {{ base_path }}/configs/mariadb/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  db_postgres:
+    image: postgres:18-alpine
+    container_name: db_postgres
+    restart: unless-stopped
+    ports:
+      - "{{ port_postgres }}"
+    environment:
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_DB: "{{ postgres_db }}"
+    networks:
+      - nodo_net
+    volumes:
+      - {{ base_path }}/postgres_data:/var/lib/postgresql
+      - {{ base_path }}/configs/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    command: ["postgres", "-c", "listen_addresses=*"]
+
+  db_mongo:
+    image: mongo:latest
+    container_name: db_mongo
+    restart: unless-stopped
+    ports:
+      - "{{ port_mongo }}"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "{{ mongo_root_username }}"
+      MONGO_INITDB_ROOT_PASSWORD: "{{ mongo_root_password }}"
+    networks:
+      - nodo_net
+    volumes:
+      - {{ base_path }}/mongo_data:/data/db
+      - {{ base_path }}/configs/mongo/init.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+
+  auth_redis:
+    image: redis:alpine
+    container_name: auth_redis
+    restart: unless-stopped
+    ports:
+      - "{{ port_redis }}"
+    networks:
+      - nodo_net
+    command: ["redis-server", "--bind", "0.0.0.0"]
+
+networks:
+  nodo_net:
+    driver: bridge

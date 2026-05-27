@@ -1,0 +1,32 @@
+#!/bin/bash
+TYPE=$1
+DB_NAME=$2
+VERBOSE=$3 # Recibe '-v' del playbook
+LOG_FILE="/var/log/nodo-backup.log"
+BACKUP_PATH="{{ base_path }}/backups"
+
+[ "$VERBOSE" == "-v" ] && set -x # Activa verbose si se solicita
+
+log_message() { echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a $LOG_FILE; }
+
+# Función de ejecución única
+run_backup() {
+    T=$1; D=$2; TS=$(date +%Y%m%d_%H%M)
+    log_message "Iniciando backup individual: $D ($T)"
+    case $T in
+      mariadb) docker exec db_mariadb mariadb-dump -u root -p'{{ mariadb_root_password }}' --single-transaction --quick $D > "$BACKUP_PATH/mariadb/${D}_$TS.sql" ;;
+      postgres) docker exec db_postgres pg_dump -U {{ postgres_user }} $D > "$BACKUP_PATH/postgres/${D}_$TS.sql" ;;
+      mongo) docker exec db_mongo mongodump --username {{ mongo_root_username }} --password {{ mongo_root_password }} --authenticationDatabase admin --db $D --archive > "$BACKUP_PATH/mongo/${D}_$TS.archive" ;;
+    esac
+    log_message "Finalizado: ${D}_$TS"
+}
+
+# LÓGICA ESTRICTA:
+if [ "$1" != "" ] && [ "$2" != "" ]; then
+    run_backup $1 $2 # Solo hace lo que le pediste
+else
+    # Esto es solo para el cron (automático completo)
+    {% for db in mariadb_databases %} run_backup mariadb {{ db.name }}; {% endfor %}
+    {% for db in postgres_databases %} run_backup postgres {{ db.name }}; {% endfor %}
+    {% for db in mongo_databases %} run_backup mongo {{ db.name }}; {% endfor %}
+fi

@@ -11,103 +11,96 @@
             name: [curl, gnupg]
             state: present
             update_cache: yes
-
         - name: Descargar llave GPG de Tailscale
           get_url:
             url: https://pkgs.tailscale.com/stable/debian/{{ ansible_distribution_release }}.noarmor.gpg
             dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
             mode: '0644'
-
         - name: Añadir repositorio de Tailscale
           apt_repository:
             repo: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/debian {{ ansible_distribution_release }} main"
             state: present
             update_cache: yes
-
         - name: Instalar Tailscale
           apt:
             name: tailscale
             state: latest
+
     - name: FASE 1 - Instalacion de Docker y dependencias
       apt:
-        name:
-          - docker.io
-          - docker-compose
-          - python3-pip
-          - curl
-          - git
-          - net-tools
-          - ufw
+        name: [docker.io, docker-compose, python3-pip, curl, git, net-tools, ufw]
         state: present
         update_cache: yes
 
-
     - name: FASE 1.1 - Configuración de Firewall (UFW)
       block:
-        - name: FASE 0.0 - Asegurar acceso SSH
-          ufw:
-            rule: allow
-            port: '22'
-            proto: tcp
-
-        - name: FASE 0.1 - Bloquear acceso público a puertos sensibles
-          ufw:
-            rule: deny
-            port: "{{ item }}"
-            proto: tcp
+        - name: Asegurar acceso SSH
+          ufw: { rule: allow, port: '22', proto: tcp }
+        - name: Bloquear acceso público a puertos sensibles
+          ufw: { rule: deny, port: "{{ item }}", proto: tcp }
           with_items: ["3306", "5432", "27017", "6379"]
-
-        - name: FASE 0.2 - Permitir acceso solo desde redes autorizadas
-          ufw:
-            rule: allow
-            src: "{{ item.0 }}"
-            proto: tcp
-            to_port: "{{ item.1 }}"
+        - name: Permitir acceso redes autorizadas
+          ufw: { rule: allow, src: "{{ item.0 }}", proto: tcp, to_port: "{{ item.1 }}" }
           with_nested:
             - "{{ allowed_db_networks }}"
             - ["3306", "5432", "27017", "6379"]
-
         - name: Habilitar UFW
-          ufw:
-            state: enabled
+          ufw: { state: enabled }
 
-    - name: FASE 2 - Creacion de carpetas de datos con permisos base
+    - name: FASE 2 - Creación y permisos de estructura de archivos
+      block:
+        - name: Crear directorios base y configs
+          file:
+            path: "/opt/servicios/nodo-db-core/{{ item }}"
+            state: directory
+            owner: "root"
+            group: "root"
+            mode: '0755'
+          with_items:
+            - mariadb_data
+            - postgres_data
+            - mongo_data
+            - configs/postgres
+            - configs/mariadb
+            - configs/mongo
+        - name: Asignar permisos específicos de ejecución para motores
+          file:
+            path: "/opt/servicios/nodo-db-core/{{ item.path }}"
+            owner: "{{ item.uid }}"
+            group: "{{ item.uid }}"
+            mode: '0700'
+          with_items:
+            - { path: 'mariadb_data', uid: '999' }
+            - { path: 'mongo_data',   uid: '999' }
+            - { path: 'postgres_data', uid: '70'  }
+
+    - name: FASE 2.1 - Estructura jerárquica de backups (MariaDB)
       file:
-        path: "/opt/servicios/nodo-db-core/{{ item }}"
+        path: "/opt/servicios/nodo-db-core/backups/mariadb/{{ item.name }}"
         state: directory
         mode: '0755'
         owner: "1000"
         group: "1000"
-      with_items:
-        - mariadb_data
-        - postgres_data
-        - mongo_data
-        - configs/postgres
-        - configs/mariadb
-        - configs/mongo
+      with_items: "{{ mariadb_databases }}"
 
-    - name: FASE 2.1 - Estructura jerárquica de backups
+    - name: FASE 2.1 - Estructura jerárquica de backups (Postgres)
       file:
-        path: "/opt/servicios/nodo-db-core/backups/{{ item }}"
+        path: "/opt/servicios/nodo-db-core/backups/postgres/{{ item.name }}"
         state: directory
         mode: '0755'
         owner: "1000"
         group: "1000"
-        recurse: yes
-      with_items:
-        - mariadb/wordpress
-        - mariadb/glpi
-        - postgres/n8n
-        - postgres/zabbix
-        - mongo
+      with_items: "{{ postgres_databases }}"
 
-    - name: FASE 3 - Permisos especificos para Postgres
+    - name: FASE 2.1 - Estructura jerárquica de backups (Mongo)
       file:
-        path: "/opt/servicios/nodo-db-core/postgres_data"
+        path: "/opt/servicios/nodo-db-core/backups/mongo/{{ item.name }}"
         state: directory
-        owner: "70"
-        group: "70"
-        mode: '0700'
+        mode: '0755'
+        owner: "1000"
+        group: "1000"
+      with_items: "{{ mongo_databases }}"
+
 
     - name: FASE 4 - Generar configuraciones dinámicas (Jinja2)
       template:
@@ -118,53 +111,30 @@
         - { src: "init_mariadb.sql.j2", dest: "configs/mariadb/init.sql" }
         - { src: "init_postgres.sql.j2", dest: "configs/postgres/init.sql" }
         - { src: "init_mongo.js.j2", dest: "configs/mongo/init.js" }
-        - { src: ".env.js", dest: ".env" }
+      register: template_result
 
     - name: FASE 5 - Pull de imagenes
       shell: "docker pull {{ item }}"
-      with_items:
-        - "mariadb:11.4"
-        - "postgres:18-alpine"
-        - "mongo:latest"
-        - "redis:alpine"
+      with_items: ["mariadb:11.4", "postgres:18-alpine", "mongo:latest", "redis:alpine"]
 
-    - name: FASE 6 - Preparar entorno limpio si no hay datos
-      shell: |
-        if [ ! -f /opt/servicios/nodo-db-core/mariadb_data/ib_buffer_pool ]; then
-          rm -rf /opt/servicios/nodo-db-core/mariadb_data/*
-        fi
-
-    - name: FASE 7 - Estado de logs Mariadb
-      shell: |
-        {% raw %}
-        ESTADO=$(docker inspect -f '{{.State.Status}}' db_mariadb 2>/dev/null || echo "not_running")
-        {% endraw %}
-        if [ "$ESTADO" = "restarting" ] && [ -f /opt/servicios/nodo-db-core/mariadb_data/tc.log ]; then
-            rm -f /opt/servicios/nodo-db-core/mariadb_data/tc.log
-            rm -f /opt/servicios/nodo-db-core/mariadb_data/ib_logfile*
-        fi
-      ignore_errors: yes
-
-    - name: FASE 8 - Levantar los contenedores
+    - name: FASE 8 - Levantar contenedores
       shell: |
         cd /opt/servicios/nodo-db-core
-        docker compose down
         docker compose up -d --force-recreate
 
     - name: FASE 9 - Automatización total de backups
       block:
-        - name: Desplegar script de backup desde plantilla
+        - name: Desplegar script maestro de backups
           template:
-            src: templates/backup.sh.j2
-            dest: /usr/local/bin/nodo-backup.sh
+            src: templates/backups.sh.j2
+            dest: /usr/local/bin/backups.sh
             mode: '0755'
             owner: root
             group: root
-
         - name: Asegurar tarea programada en Cron
           cron:
             name: "Nodo Daily Backup"
             minute: "{{ backup_cron_minute }}"
             hour: "{{ backup_cron_hour }}"
-            job: "/usr/local/bin/nodo-backup.sh"
+            job: "/usr/local/bin/backups.sh"
             state: present

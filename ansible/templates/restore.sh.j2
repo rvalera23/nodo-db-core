@@ -1,0 +1,36 @@
+#!/bin/bash
+# NODO: Script de restauración con Logging y Verbose
+TYPE=$1
+FILE=$2
+VERBOSE=$3 # Si pasas "-v" como tercer argumento, activa modo detallado
+DB_PATH="{{ base_path }}/backups/$TYPE/$FILE"
+LOG_FILE="/var/log/nodo-restauracion.log"
+DB_NAME=$(echo $FILE | sed -E 's/_[0-9]{8}_[0-9]{4}.*//')
+
+# Función Logger
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a $LOG_FILE
+}
+
+[ "$VERBOSE" == "-v" ] && set -x # Activar modo debug de Bash si se pide verbose
+
+log_message "INICIANDO RESTAURACIÓN: $DB_NAME desde $FILE"
+
+case $TYPE in
+  mariadb)
+    docker exec -i db_mariadb mariadb -u root -p'{{ mariadb_root_password }}' $DB_NAME < $DB_PATH 2>&1 | tee -a $LOG_FILE
+    ;;
+  postgres)
+    docker exec -i db_postgres psql -U {{ postgres_user }} -d $DB_NAME < $DB_PATH 2>&1 | tee -a $LOG_FILE
+    ;;
+  mongo)
+    docker exec -i db_mongo mongorestore --username {{ mongo_root_username }} --password {{ mongo_root_password }} --authenticationDatabase admin --archive < $DB_PATH 2>&1 | tee -a $LOG_FILE
+    ;;
+esac
+
+if [ ${PIPESTATUS[0]} -eq 0 ]; then
+    log_message "ÉXITO: Restauración de $DB_NAME finalizada correctamente."
+else
+    log_message "ERROR: Falló la restauración de $DB_NAME."
+    exit 1
+fi

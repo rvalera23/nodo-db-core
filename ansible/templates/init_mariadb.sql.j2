@@ -1,13 +1,14 @@
--- 1. Crear el usuario primero (es la base de todo)
+-- Crear usuario si no existe
 CREATE USER IF NOT EXISTS '{{ db_app_user }}'@'%' IDENTIFIED BY '{{ db_app_password }}';
 
--- 2. Crear las bases de datos
+-- Crear bases de datos si no existen
 {% for db in mariadb_databases %}
 CREATE DATABASE IF NOT EXISTS `{{ db.name }}`;
--- 3. Asignar privilegios sobre las bases ya creadas
+
+-- REFRESCAR PRIVILEGIOS: Esto se ejecuta siempre y asegura que el usuario tenga acceso
 GRANT ALL PRIVILEGES ON `{{ db.name }}`.* TO '{{ db_app_user }}'@'%';
 {% endfor %}
 
--- 4. Permisos globales y limpieza
+-- Permisos globales y aplicar cambios
 GRANT ALL PRIVILEGES ON *.* TO '{{ db_app_user }}'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;

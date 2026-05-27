@@ -1,0 +1,24 @@
+---
+- name: Backup Manual Inteligente
+  hosts: all
+  become: yes
+  vars_files:
+    - group_vars/all.yml
+  tasks:
+    - name: 1. Elegir Motor
+      pause:
+        prompt: "Selecciona motor: 1) MariaDB, 2) Postgres, 3) Mongo"
+      register: type_in
+
+    - name: 2. Definir tipo y lista de DBs
+      set_fact:
+        type: "{{ 'mariadb' if type_in.user_input == '1' else ('postgres' if type_in.user_input == '2' else 'mongo') }}"
+        db_list: "{{ mariadb_databases if type_in.user_input == '1' else (postgres_databases if type_in.user_input == '2' else mongo_databases) }}"
+
+    - name: 3. Elegir Base de Datos exacta
+      pause:
+        prompt: "Elige la DB a respaldar: {{ db_list | map(attribute='name') | list }}"
+      register: db_choice
+
+    - name: 4. Ejecutar backup con verbose
+      shell: /usr/local/bin/backups.sh "{{ type }}" "{{ db_choice.user_input }}" -v
